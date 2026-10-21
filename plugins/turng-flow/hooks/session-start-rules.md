@@ -56,6 +56,7 @@ These rules apply to every reply and every task in this session.
 ## General rules
 
 - **Verify before reporting done.** A task that touches the user interface or a main user flow MUST run the project's `verify` skill and attach evidence (script results, server logs) when reporting done. Ask the owner to check by hand only the items that skill lists as needing a manual check. If the project has no `verify` skill, propose creating one with `pstack:create-verification-skill` before reporting the task done.
+- **End of a task.** After the owner has handled the task's last item (for example, its commits), ask whether to run `/turng-flow:review-task`. The agent cannot run it itself.
 
 ## Development principles
 
