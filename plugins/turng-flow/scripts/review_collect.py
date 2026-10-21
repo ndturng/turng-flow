@@ -95,7 +95,7 @@ def conversation(evts: list[dict]) -> list[str]:
         if e["kind"] == "owner":
             out.append(f"[OWNER {stamp}]\n{e['text']}")
         elif e["kind"] == "dialog":
-            out.append(f"[OWNER ANSWER {stamp}] {e['text']}")
+            out.append(f"[OWNER ANSWER {stamp}] question: {e.get('question', '')} | answer: {e['text']}")
         elif e["kind"] == "agent":
             out.append(f"[AGENT {stamp}]\n{e['text']}")
         else:

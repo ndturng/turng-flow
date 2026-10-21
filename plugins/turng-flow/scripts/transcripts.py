@@ -57,7 +57,7 @@ def events(folder: Path, since: datetime | None = None, until: datetime | None =
                 result = rec.get("toolUseResult")
                 if isinstance(result, dict) and isinstance(result.get("answers"), dict):
                     for question, answer in result["answers"].items():
-                        found.append({**base, "kind": "dialog", "text": f"{question} -> {answer}"})
+                        found.append({**base, "kind": "dialog", "text": str(answer), "question": str(question)})
             elif rec.get("type") == "assistant":
                 text = _text(msg.get("content", ""))
                 if text:
