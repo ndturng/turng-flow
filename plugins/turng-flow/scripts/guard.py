@@ -10,6 +10,7 @@ Which files each mode may change:
 | .turng-flow/reports/ (trial and review reports)        | yes       | yes       |
 | .turng-flow/ (owner's mode state)                      | no        | no        |
 | everything else (code)                                 | no        | yes       |
+| files outside the project (scratchpad, /tmp)           | yes       | yes       |
 
 Shell commands are checked for signs of writing files; that check cannot see every way of writing,
 so plan_check.py also compares git status at the end of each turn in plan mode.
@@ -74,6 +75,8 @@ def kind(rel: str) -> str:
 
 
 def allowed(rel: str, mode: str) -> bool:
+    if Path(rel).is_absolute():
+        return True
     k = kind(rel)
     if k == "owner-state":
         return False
