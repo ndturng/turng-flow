@@ -67,3 +67,12 @@ These rules apply to every reply and every task in this session.
 
 - Each test proves only one thing.
 - A business rule that exists only in the frontend has no effect; the server must enforce it.
+
+## Required skills
+
+| Event | Skill to run |
+|---|---|
+| Adding, editing, or closing a backlog item | `turng-flow:backlog-write` |
+| After every edit to a group B file, before handing over the commit | `turng-flow:backlog-audit` |
+| The owner decides or changes something that holds beyond the current task; a task closes; a debt is recorded or closed | `turng-flow:project-history` |
+| Starting, continuing, or closing a task | `turng-flow:task-record` |
