@@ -7,6 +7,7 @@ Which files each mode may change:
 | decision logs: BACKLOG.md, HISTORY.tsv, TASK_SPEC.md   | yes       | no        |
 | rule files and design notes                            | yes       | no        |
 | task records: other files in agent-workspace/tasks/    | yes       | yes       |
+| .turng-flow/reports/ (trial and review reports)        | yes       | yes       |
 | .turng-flow/ (owner's mode state)                      | no        | no        |
 | everything else (code)                                 | no        | yes       |
 
@@ -30,6 +31,7 @@ DECISION_LOGS = ["agent-workspace/BACKLOG.md", "agent-workspace/HISTORY.tsv", "a
 RULES_AND_DESIGN = ["AGENTS.md", "CLAUDE.md", ".claude/skills/*", ".claude/settings*.json", ".claude/hooks/*",
                     "agent-workspace/design-notes/*"]
 TASK_RECORDS = ["agent-workspace/tasks/*"]
+REPORTS = [".turng-flow/reports/*"]
 OWNER_STATE = [".turng-flow/*", ".turng-flow"]
 
 REDIRECT = re.compile(r"\d*>>?\s*(\S+)")
@@ -58,6 +60,8 @@ def matches(rel: str, patterns: list[str]) -> bool:
 
 
 def kind(rel: str) -> str:
+    if matches(rel, REPORTS):
+        return "report"
     if matches(rel, OWNER_STATE):
         return "owner-state"
     if matches(rel, DECISION_LOGS):
@@ -73,7 +77,7 @@ def allowed(rel: str, mode: str) -> bool:
     k = kind(rel)
     if k == "owner-state":
         return False
-    if k == "task-record":
+    if k in ("task-record", "report"):
         return True
     if mode == "plan":
         return k in ("decision-log", "rules-or-design")
