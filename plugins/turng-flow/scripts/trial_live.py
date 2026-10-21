@@ -3,7 +3,7 @@ plugins enabled on this machine, and check that the turng-flow mechanisms work.
 
 These checks test hooks, not how well a model follows the rules, so they run on a cheap model.
 
-  trial_live.py [--model haiku]
+  trial_live.py [--model <model>]   default: the trial-live role in models.py
 
 Writes .turng-flow/reports/trial-live-<time>.md and prints a one-line summary per check.
 """
@@ -108,8 +108,11 @@ def checks(s: Session) -> list[tuple[str, bool, str]]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--model", default="haiku")
+    parser.add_argument("--model", default=None, help="default: the trial-live role in models.py")
     args = parser.parse_args()
+    if args.model is None:
+        from models import resolved
+        args.model = resolved()["trial-live"]
     if subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=ROOT, capture_output=True).returncode:
         sys.exit("trial needs a git repository")
     base = Path(tempfile.mkdtemp(prefix="turng-flow-trial-"))
