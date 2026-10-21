@@ -45,7 +45,7 @@ def git_status(root: Path) -> str:
 
 def set_mode(mode: str, source: str) -> None:
     d = state_dir()
-    record = {"mode": mode, "set_at": datetime.now().isoformat(timespec="seconds"), "set_by": source}
+    record = {"mode": mode, "set_at": datetime.now().astimezone().isoformat(timespec="seconds"), "set_by": source}
     (d / "mode.json").write_text(json.dumps(record) + "\n", encoding="utf-8")
     log = d / "mode-log.tsv"
     if not log.exists():
