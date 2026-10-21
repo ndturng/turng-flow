@@ -33,11 +33,29 @@ These rules apply to every reply and every task in this session.
 14. **Give context.** When raising a problem, a behaviour, or a question, state which step it belongs to, which thing it concerns, why it matters, and whether it belongs to the current task or is separate work.
 15. **Report work status.** Every reply that ends the agent's turn states whether the work is done, in progress, or waiting for the owner, and on which decision.
 
+## Modes
+
+- **Switching.** The owner switches modes with `/turng-flow:plan-mode` and `/turng-flow:work-mode`. The agent cannot run these commands and never claims a mode change; the current mode is in `.turng-flow/mode.json` (rule 3). A new session starts in plan mode.
+- **Plan mode.** The agent analyses, checks facts, proposes, and records the owner's decisions. It does not change code; pstack's "proceed, then present" does not apply here.
+- **Asking for work mode.** When there is exactly one concrete approach with its scope, and the owner has agreed to it, ask the owner to run `/turng-flow:work-mode`. Do not ask while the proposal still contains an open question or several options. The approved approach is stored in `.turng-flow/approved-scope.md`.
+- **Work mode.** The agent carries out the approved approach without asking at each step. It does not change decisions, rules, or design notes. When a decision needs to change, or the agent reaches an approval-gated action outside the approved approach, it stops and asks the owner to run `/turng-flow:plan-mode`.
+- **Files each mode may change.** A hook enforces this table.
+
+  | Files | Plan mode | Work mode |
+  |---|---|---|
+  | Decision logs: `BACKLOG.md`, `HISTORY.tsv`, `TASK_SPEC.md` | yes | no |
+  | Rule files and design notes | yes, after the owner approves the text (rule 8) | no |
+  | Other task records in `agent-workspace/tasks/` | yes | yes |
+  | `.turng-flow/` | no | no |
+  | Code and all other files | no | yes |
+
+- **Autonomous actions** (both modes, no approval needed): reading code, running commands and tests, reproducing defects, running an experiment to settle a question of fact. In work mode, also the steps of the approved approach on the task branch.
+- **Approval-gated actions** (need the owner's approval): choosing an approach; any detail that changes behaviour a user can see; work outside the task scope (rule 5); the wording of a rule (rule 8); changing the tech stack; an action that costs money, cannot be undone, or can lose data the owner relies on or evidence needed for an open investigation, in which case state the risk first; changing a decision recorded in the history log.
+- **Reply format in plan mode.** This replaces pstack's "Writing the reply" in plan mode. Put the item the owner must handle (rule 2) at the start of the reply. Use bullets, one idea per line, with sub-points indented one level. In work mode, pstack's writing style applies.
+
 ## General rules
 
-- Do not change the tech stack without a clear reason and the owner's approval.
 - **Verify before reporting done.** A task that touches the user interface or a main user flow MUST run the project's `verify` skill and attach evidence (script results, server logs) when reporting done. Ask the owner to check by hand only the items that skill lists as needing a manual check. If the project has no `verify` skill, propose creating one with `pstack:create-verification-skill` before reporting the task done.
-- **State risks before acting.** Before an action that costs money, cannot be undone, or can lose data the owner relies on or evidence needed for an open investigation, state the risk and wait for the owner's approval.
 
 ## Development principles
 
