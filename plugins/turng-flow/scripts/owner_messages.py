@@ -22,9 +22,13 @@ from transcripts import events, transcript_dir  # noqa: E402
 AGENT_TAIL = 3000
 
 
-def repo_root() -> Path:
+def repo_root(strict: bool = False) -> Path:
     out = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
-    return Path(out.stdout.strip()) if out.returncode == 0 else Path.cwd()
+    if out.returncode == 0:
+        return Path(out.stdout.strip())
+    if strict:
+        raise SystemExit("not inside a git repository")
+    return Path.cwd()
 
 
 def owner_messages(repo: Path, with_agent: bool = False):

@@ -24,7 +24,7 @@ from gitbase import default_branch  # noqa: E402
 from check_quotes import ELLIPSIS, MIN_FRAGMENT, QUOTE, norm  # noqa: E402
 from owner_messages import owner_messages, repo_root  # noqa: E402
 
-REPO = repo_root()
+REPO = repo_root(strict=True)
 REL = "agent-workspace/HISTORY.tsv"
 HISTORY = REPO / REL
 COLUMNS = ["id", "date", "type", "what", "source", "refs"]
@@ -127,7 +127,9 @@ def check(base: str) -> int:
             bad += 1
             print(f"WRONG  {REL}:{row['line']} {row['id']}: {problem}")
     old = subprocess.run(["git", "show", f"{base}:{REL}"], cwd=REPO, capture_output=True, text=True)
-    if old.returncode == 0 and not text.startswith(old.stdout):
+    if old.returncode != 0:
+        print(f"NOTE   cannot read {REL} on {base}; changes to old rows were not checked")
+    elif not text.startswith(old.stdout):
         bad += 1
         print(f"WRONG  {REL}: a row that exists on {base} was changed or removed. The log is append only; "
               "to correct a row, add a 'correction' row that points to its id.")
