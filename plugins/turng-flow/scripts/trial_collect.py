@@ -104,8 +104,16 @@ def mandatory_skills(root: Path) -> str:
 
 def table_check() -> list[str]:
     rules = read(PLUGIN_ROOT / "hooks/session-start-rules.md")
-    rows = [line for line in rules.splitlines() if line.strip().startswith("|") and ("yes" in line or "no" in line)]
-    rows = [r for r in rows if not set(r.replace("|", "").strip()) <= set("-: ")]
+    marker = "**Files each mode may change.**"
+    if marker not in rules:
+        return [f"the working rules have no '{marker}' table"]
+    rows = []
+    for line in rules.split(marker, 1)[1].splitlines()[1:]:
+        if rows and not line.strip().startswith("|"):
+            break
+        if line.strip().startswith("|"):
+            rows.append(line)
+    rows = [r for r in rows[1:] if not set(r.replace("|", "").strip()) <= set("-: ")]
     problems = []
     if len(rows) != len(TABLE_SAMPLES):
         return [f"expected {len(TABLE_SAMPLES)} table rows in the working rules, found {len(rows)}"]
