@@ -170,7 +170,7 @@ def main() -> None:
             loaded += text
             parts.append(section(f"Project {name}", text))
     if (ROOT / "AGENTS.md").exists() and "@AGENTS.md" not in loaded:
-        parts.append(section("Project AGENTS.md (not imported by CLAUDE.md, so Claude Code does not load it)",
+        parts.append(section("Project AGENTS.md (loaded by Claude Code itself; CLAUDE.md does not import it)",
                              read(ROOT / "AGENTS.md")))
     memory = HOME / ".claude/projects" / re.sub(r"[^A-Za-z0-9]", "-", str(ROOT)) / "memory"
     parts.append(section("Project memory", "\n\n".join(f"### {p.name}\n\n{read(p)}" for p in sorted(memory.glob("*.md")))))
