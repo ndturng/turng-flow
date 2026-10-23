@@ -14,7 +14,8 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from guard import allowed  # noqa: E402
+from guard import allowed, plugin_roots  # noqa: E402
+from rules import problems as rules_problems  # noqa: E402
 from mode import state_dir  # noqa: E402
 
 HOME = Path.home()
@@ -29,8 +30,17 @@ TABLE_SAMPLES = [
 ]
 
 
-def section(title: str, body: str) -> str:
-    return f"\n\n## {title}\n\n{body.strip() if body.strip() else '(empty)'}\n"
+def fenced(text: str) -> str:
+    """Text from another source, verbatim, inside a fence longer than any tilde run in it."""
+    fence = "~" * max(4, max((len(m) for m in re.findall(r"~+", text)), default=0) + 1)
+    return f"{fence}\n{text.strip()}\n{fence}"
+
+
+def section(title: str, body: str, verbatim: bool = True) -> str:
+    """One source. Its text is fenced, so its own headings stay inside the section."""
+    if not body.strip():
+        return f"\n\n## {title}\n\n(empty)\n"
+    return f"\n\n## {title}\n\n{fenced(body) if verbatim else body.strip()}\n"
 
 
 def read(path: Path) -> str:
@@ -72,6 +82,17 @@ def enabled_plugins() -> list[tuple[str, Path]]:
     return result
 
 
+def context_text(stdout: str) -> str:
+    """The text a SessionStart hook adds to the context: plain stdout, or additionalContext when it prints JSON."""
+    try:
+        data = json.loads(stdout)
+    except ValueError:
+        return stdout
+    if not isinstance(data, dict):
+        return stdout
+    return (data.get("hookSpecificOutput") or {}).get("additionalContext") or data.get("additional_context") or stdout
+
+
 def session_start_output(name: str, root: Path) -> str:
     try:
         hooks = json.loads(read(root / "hooks/hooks.json") or "{}").get("hooks", {})
@@ -86,20 +107,28 @@ def session_start_output(name: str, root: Path) -> str:
             try:
                 run = subprocess.run(["bash", "-c", hook["command"]], input='{"source":"startup"}', env=env,
                                      cwd=ROOT, capture_output=True, text=True, timeout=30)
-                out.append(run.stdout)
+                out.append(context_text(run.stdout))
             except subprocess.TimeoutExpired:
                 out.append("(timed out)")
     return "\n".join(out)
 
 
-def mandatory_skills(root: Path) -> str:
-    lines = []
+def mandatory_skills(plugin: str, root: Path, startup: str) -> str:
+    """Full text of each skill whose description uses mandatory wording or that the session-start output names
+    (`<plugin>:<skill>` or `<skill>` in backticks): the agent is told to run these, so their steps can conflict
+    with turng-flow as much as the startup text. A skill whose body is already in the startup output is skipped.
+    Each skill is fenced, so its headings stay inside it and quotes from it stay verbatim."""
+    short = plugin.split("@")[0]
+    parts = []
     for skill in sorted(root.glob("skills/*/SKILL.md")):
-        head = read(skill).split("---")
-        description = head[1] if len(head) > 2 else ""
-        if MANDATORY.search(description):
-            lines.append(f"- `{skill.parent.name}`: {' '.join(description.split())[:400]}")
-    return "\n".join(lines)
+        name, text = skill.parent.name, read(skill)
+        head = text.split("---", 2)
+        description, body = (head[1], head[2]) if len(head) == 3 else ("", text)
+        named = f"{short}:{name}" in startup or f"`{name}`" in startup
+        if not (MANDATORY.search(description) or named) or body.strip()[:500] in startup:
+            continue
+        parts.append(f"### Skill `{short}:{name}`\n\n{fenced(text)}")
+    return "\n\n".join(parts)
 
 
 def table_check() -> list[str]:
@@ -114,7 +143,11 @@ def table_check() -> list[str]:
         if line.strip().startswith("|"):
             rows.append(line)
     rows = [r for r in rows[1:] if not set(r.replace("|", "").strip()) <= set("-: ")]
-    problems = []
+    problems = rules_problems()
+    for root in plugin_roots():
+        sample = str(root / "skills/x/SKILL.md")
+        if allowed(sample, "plan") or allowed(sample, "work"):
+            problems.append(f"{root}: rules say the agent never writes to the plugin; guard.py allows it")
     if len(rows) != len(TABLE_SAMPLES):
         return [f"expected {len(TABLE_SAMPLES)} table rows in the working rules, found {len(rows)}"]
     for row, sample in zip(rows, TABLE_SAMPLES):
@@ -151,14 +184,16 @@ def main() -> None:
     for name, root in enabled_plugins():
         if root.resolve() == PLUGIN_ROOT:
             continue
-        parts.append(section(f"Plugin {name}: session-start output", session_start_output(name, root)))
-        parts.append(section(f"Plugin {name}: skills with mandatory wording", mandatory_skills(root)))
+        startup = session_start_output(name, root)
+        parts.append(section(f"Plugin {name}: session-start output", startup))
+        parts.append(section(f"Plugin {name}: skills the agent is told to run (full text)",
+                             mandatory_skills(name, root, startup), verbatim=False))
     problems = table_check()
     parts.append(section("Self-check: permission table vs guard.py",
-                         "\n".join(f"- {p}" for p in problems) or "Matches."))
+                         "\n".join(f"- {p}" for p in problems) or "Matches.", verbatim=False))
     out_dir = state_dir() / "reports"
     out_dir.mkdir(exist_ok=True)
-    out = out_dir / f"trial-sources-{datetime.now():%Y%m%d-%H%M%S}.md"
+    out = out_dir / f"trial-sources-{datetime.now():%Y%m%d-%H%M%S-%f}.md"
     out.write_text("\n".join(parts), encoding="utf-8")
     print(f"sources: {out}")
     print("table check: " + ("matches" if not problems else "; ".join(problems)))

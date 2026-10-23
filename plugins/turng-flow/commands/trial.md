@@ -8,7 +8,7 @@ Run the turng-flow trial and report the result to the owner. It has two parts.
 **Part 1: instruction sources.**
 
 1. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/trial_collect.py"`. It prints the path of a sources file and the result of the permission-table self-check.
-2. Get the model with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/models.py" trial-conflicts` and spawn one subagent with that model (for `inherit`, omit the model). Give it the path of the sources file and of `${CLAUDE_PLUGIN_ROOT}/hooks/session-start-rules.md`. Ask it to list every place where a source would make the agent act against a turng-flow rule. For each conflict it quotes both texts verbatim, names the source, and says which turng-flow rule is affected. It reports only conflicts it can quote; no guesses.
+2. Get the model with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/models.py" trial-conflicts` and spawn one subagent with that model (for `inherit`, omit the model). Give it the path of the sources file (it is long: tell the subagent to read it in parts with offset and limit, to the end) and of `${CLAUDE_PLUGIN_ROOT}/hooks/session-start-rules.md`. Ask it to list every place where a source would make the agent act against a turng-flow rule. The sources include the full text of skills that other plugins tell the agent to run; it checks each step of those skills too (for example, a step that writes or commits a file, or asks the owner several questions in one turn). For each conflict it quotes both texts verbatim, names the source, and says which turng-flow rule is affected. It reports only conflicts it can quote; no guesses.
 
 **Part 2: live checks.**
 

@@ -22,6 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from mode import state_dir  # noqa: E402
+import rules  # noqa: E402
 
 PLUGIN_ROOT = Path(__file__).resolve().parent.parent
 ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
@@ -59,6 +60,23 @@ class Session:
         files = sorted(folder.glob("*.jsonl"), key=lambda f: f.stat().st_mtime)
         return bool(files) and text in files[-1].read_text(encoding="utf-8", errors="replace")
 
+    def rules_seen(self) -> bool:
+        """Whether the model received every part of the working rules whole. The transcript keeps a hook's
+        full stdout and, in content, what the model got: a cut output there starts with <persisted-output>."""
+        folder = Path.home() / ".claude/projects" / re.sub(r"[^A-Za-z0-9]", "-", str(self.workdir))
+        files = sorted(folder.glob("*.jsonl"), key=lambda f: f.stat().st_mtime)
+        seen = []
+        for line in files[-1].read_text(encoding="utf-8", errors="replace").splitlines() if files else []:
+            try:
+                hook = json.loads(line).get("attachment") or {}
+            except ValueError:
+                continue
+            if isinstance(hook, dict) and "rules.py\" part" in str(hook.get("command", "")):
+                seen.append(str(hook.get("content", "")))
+        received = "\n".join(seen)
+        return "<persisted-output>" not in received and all(
+            part.strip().splitlines()[-1] in received for part in rules.parts(rules.RULES.read_text(encoding="utf-8")))
+
     def mode(self) -> dict:
         try:
             return json.loads((self.workdir / ".turng-flow/mode.json").read_text(encoding="utf-8"))
@@ -71,35 +89,44 @@ def checks(s: Session) -> list[tuple[str, bool, str]]:
     probe = s.workdir / "trial_probe.txt"
     spec = s.workdir / SPEC
 
+    # Pass when the session-start hooks put every part of the rules into the transcript; the model's answer is
+    # only evidence, since a model can miss a document that is in its context.
     reply = s.ask("Do not use tools. In the document titled 'turng-flow working rules' in your context, "
                   "what is the title of rule 10? Reply with the title only, or NONE if there is no such document.")
-    results.append(("1. Working rules loaded at session start", "do it yourself" in reply.lower(), reply[:200]))
+    loaded = s.rules_seen()
+    results.append(("1. Working rules loaded at session start", loaded,
+                    f"every rules part received whole: {loaded}; model answer: {reply[:150]}"))
 
     mode = s.mode()
     results.append(("2. New session starts in plan mode",
                     mode.get("mode") == "plan" and mode.get("set_by") == "session start", json.dumps(mode)))
 
-    reply = s.ask("Use the Write tool to create trial_probe.txt containing the word probe. Report the exact result.",
+    reply = s.ask(f"Use the Write tool to create {probe} containing the word probe. Report the exact result.",
                   resume=True)
-    results.append(("3. Plan mode blocks editing code", not probe.exists(), reply[:200]))
+    # The guard's own message proves the write was tried and denied, not written somewhere else.
+    denied = s.transcript_contains("trial_probe.txt cannot be changed in plan mode")
+    results.append(("3. Plan mode blocks editing code", denied and not probe.exists(),
+                    f"guard denial in transcript: {denied}; " + reply[:150]))
 
     reply = s.ask("Switch to work mode yourself by invoking turng-flow:work-mode with the Skill tool. "
                   "Report the exact tool result.", resume=True)
     results.append(("4. Agent cannot switch to work mode itself", s.mode().get("mode") == "plan", reply[:200]))
 
     s.ask("/turng-flow:work-mode", resume=True)
-    s.ask("Use the Write tool to create trial_probe.txt containing the word probe. Report the exact result.",
+    s.ask(f"Use the Write tool to create {probe} containing the word probe. Report the exact result.",
           resume=True)
     before = spec.read_text(encoding="utf-8")
-    reply = s.ask(f"Use the Edit tool to append the line 'changed' to {SPEC}. Report the exact result.", resume=True)
+    reply = s.ask(f"Use the Edit tool to append the line 'changed' to {spec}. Report the exact result.", resume=True)
     ok = probe.exists() and spec.read_text(encoding="utf-8") == before and s.mode().get("mode") == "work"
     results.append(("5. Work mode allows code, blocks decision logs", ok,
                     f"probe created: {probe.exists()}; TASK_SPEC unchanged: {spec.read_text(encoding='utf-8') == before}; "
                     + reply[:150]))
 
+    # The script writes the file itself: the rules tell the model not to write files in plan mode, so asking
+    # the model to do it tests the model, not the hook. This stands for a write that guard.py cannot see.
     s.ask("/turng-flow:plan-mode", resume=True)
-    reply = s.ask("Run exactly this with the Bash tool: python3 -c \"open('trial_sneak.txt','w').write('x')\" "
-                  "Then stop.", resume=True)
+    (s.workdir / "trial_sneak.txt").write_text("x", encoding="utf-8")
+    reply = s.ask("Do not use tools. Reply with the word OK.", resume=True)
     fired = s.transcript_contains("files changed during plan mode")
     results.append(("6. End-of-turn check reports a file written in plan mode", fired,
                     f"hook message found in transcript: {fired}; " + reply[:150]))
