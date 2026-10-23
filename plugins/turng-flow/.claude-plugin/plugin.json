@@ -1,0 +1,9 @@
+{
+  "name": "turng-flow",
+  "version": "0.1.0",
+  "description": "Owner-supervised agent workflow: working rules loaded at session start, plus skills for backlog, decision history, and task records.",
+  "author": {
+    "name": "ndturng"
+  },
+  "repository": "https://github.com/ndturng/turng-flow"
+}

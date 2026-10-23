@@ -1,0 +1,9 @@
+{
+  "roles": {
+    "task-review": "opus",
+    "doc-audit": "opus",
+    "trial-conflicts": "opus",
+    "trial-live": "haiku"
+  },
+  "allowed": ["haiku", "sonnet", "opus", "fable", "inherit"]
+}
