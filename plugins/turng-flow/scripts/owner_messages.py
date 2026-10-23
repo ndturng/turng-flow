@@ -5,7 +5,8 @@
                                     to see what the owner was answering ("1. agreed" agreed to what).
                                     That text is context, never a source for quotes.
 
-Source: ~/.claude/projects/<project path with every non-alphanumeric character as "-">/*.jsonl.
+Source: ~/.claude/projects/<checkout path with every non-alphanumeric character as "-">/*.jsonl, for the
+repository and every worktree of it.
 "message" = a message the owner typed; "dialog" = an answer the owner chose in a question box.
 Agent text, tool results, system notices, and session summaries are not owner words.
 """
@@ -31,9 +32,20 @@ def repo_root(strict: bool = False) -> Path:
     return Path.cwd()
 
 
+def checkouts(repo: Path) -> list[Path]:
+    """The repository and every worktree of it: sessions of one project are stored per checkout path."""
+    out = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=repo, capture_output=True, text=True)
+    paths = [Path(line[len("worktree "):]) for line in out.stdout.splitlines() if line.startswith("worktree ")]
+    return paths or [repo]
+
+
 def owner_messages(repo: Path, with_agent: bool = False):
     last_agent = ""
-    for e in events(transcript_dir(repo)):
+    evts = []
+    for checkout in checkouts(repo):
+        evts += events(transcript_dir(checkout))
+    evts.sort(key=lambda e: e["time"])
+    for e in evts:
         if e["kind"] == "agent":
             last_agent = e["text"]
             continue
