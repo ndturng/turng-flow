@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from gitbase import default_branch  # noqa: E402
-from owner_messages import owner_messages, repo_root  # noqa: E402
+from owner_messages import earliest, owner_messages, repo_root  # noqa: E402
 
 DEFAULT_FILES = ["agent-workspace/BACKLOG.md", "agent-workspace/HISTORY.tsv",
                  ":(glob)agent-workspace/tasks/**/TASK_SPEC.md"]
@@ -87,7 +87,8 @@ def main() -> int:
         print("NO owner messages could be read (session transcripts missing?); no conclusion is possible.")
         return 2
 
-    seen, missing, total, unquoted = set(), 0, 0, []
+    seen, missing, gone, total, unquoted = set(), 0, 0, 0, []
+    oldest = earliest(messages)
     base = args.base or default_branch(repo_root())
     for path, line in added_lines(base, args.head, args.files or DEFAULT_FILES):
         if ATTRIBUTION.search(line) and not QUOTE.search(line):
@@ -100,6 +101,11 @@ def main() -> int:
             hit = find(quote, messages)
             if hit:
                 print(f"FOUND    {path}: \"{quote[:90]}\"\n         -> owner {hit['kind']} {hit['ts']} session {hit['session'][:8]}")
+            elif (dated := re.search(re.escape(quote) + r'"\*.*?\((\d{4}-\d{2}-\d{2})', line)) \
+                    and dated.group(1) < oldest:
+                gone += 1
+                print(f"DELETED  {path}: \"{quote[:90]}\" ({dated.group(1)}) is older than the oldest owner message "
+                      f"still readable ({oldest})")
             else:
                 missing += 1
                 ratio, near = nearest(quote, messages)
@@ -112,7 +118,8 @@ def main() -> int:
               "the reviewer must:")
         for path, line in unquoted:
             print(f"  ?      {path}: {line[:260]}")
-    print(f"\n{total - missing}/{total} quotes found verbatim in the owner's messages ({len(messages)} owner messages read).")
+    print(f"\n{total - missing - gone}/{total} quotes found verbatim in the owner's messages ({len(messages)} owner messages "
+          f"read); {gone} older than the oldest readable message.")
     return 1 if missing else 0
 
 
