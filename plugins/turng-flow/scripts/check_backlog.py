@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from check_quotes import QUOTE, find, norm  # noqa: E402
 from gitbase import default_branch  # noqa: E402
 from history import HISTORY, read_rows  # noqa: E402
-from owner_messages import owner_messages, repo_root  # noqa: E402
+from owner_messages import earliest, owner_messages, repo_root  # noqa: E402
 
 REPO = repo_root(strict=True)
 REL = "agent-workspace/BACKLOG.md"
@@ -69,6 +69,9 @@ def entries(text: str) -> dict[str, dict]:
     return found
 
 
+SOURCE_DELETED = "SOURCE DELETED: "
+
+
 def entry_problems(entry: dict, owner: list[dict], history_ids: set[str], old_lines: int | None) -> list[str]:
     if "bad_heading" in entry:
         return ["the heading must look like '### B-001 [tag] Name'"]
@@ -104,7 +107,13 @@ def entry_problems(entry: dict, owner: list[dict], history_ids: set[str], old_li
         if name not in ("Owner decided", "Open questions", "Schedule") and QUOTE.search(value):
             problems.append(f"line {number}: owner quotes belong only in 'Owner decided', 'Open questions', or 'Schedule'")
         for quote in QUOTE.findall(value):
-            if not find(quote, owner):
+            if find(quote, owner):
+                continue
+            dated = re.search(re.escape(quote) + r'"\*.*?\((\d{4}-\d{2}-\d{2})', value)
+            if dated and dated.group(1) < earliest(owner):
+                problems.append(f"{SOURCE_DELETED}line {number}: quote \"{quote[:60]}\" ({dated.group(1)}) is older "
+                                f"than the oldest owner message still readable ({earliest(owner)})")
+            else:
                 problems.append(f"line {number}: quote \"{quote[:60]}\" is not in the owner's messages")
         if name == "Sources":
             ids = re.findall(r"H-\d{4}", value)
@@ -131,9 +140,13 @@ def main() -> int:
     old_lines = old_backlog_lines()
     now = entries((REPO / REL).read_text(encoding="utf-8"))
 
-    bad = 0
+    bad = deleted = 0
     for key, entry in now.items():
         for problem in entry_problems(entry, owner, history_ids, old_lines):
+            if problem.startswith(SOURCE_DELETED):
+                deleted += 1
+                print(f"NOTE   {REL}:{entry['line']} {key}: {problem}")
+                continue
             bad += 1
             print(f"WRONG  {REL}:{entry['line']} {key}: {problem}")
 
@@ -146,7 +159,7 @@ def main() -> int:
             bad += 1
             print(f"WRONG  {REL}: item {key} exists on {base} but is gone, and no debt-closed / task-closed / "
                   "dropped row in HISTORY points to it")
-    print(f"{len(now)} structured items, {bad} problems.")
+    print(f"{len(now)} structured items, {bad} problems, {deleted} quotes whose source transcript was deleted.")
     return 1 if bad else 0
 
 

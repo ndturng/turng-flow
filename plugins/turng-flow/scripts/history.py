@@ -22,7 +22,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from gitbase import default_branch  # noqa: E402
 from check_quotes import ELLIPSIS, MIN_FRAGMENT, QUOTE, norm  # noqa: E402
-from owner_messages import owner_messages, repo_root  # noqa: E402
+from owner_messages import earliest, owner_messages, repo_root  # noqa: E402
 
 REPO = repo_root(strict=True)
 REL = "agent-workspace/HISTORY.tsv"
@@ -58,6 +58,15 @@ def owner_at(stamp: str) -> list[str]:
     return [norm(m["text"]) for m in _owner_cache if m["ts"].startswith(stamp)]
 
 
+SOURCE_DELETED = "SOURCE DELETED: "
+
+
+def deleted(stamp: str) -> bool:
+    """Whether a cited owner message is older than every owner message still readable."""
+    owner_at(stamp)
+    return stamp[:10] < earliest(_owner_cache)
+
+
 def source_problems(source: str) -> tuple[list[str], list[str]]:
     """Return (problems, the owner messages cited)."""
     problems, owner_texts = [], []
@@ -68,7 +77,10 @@ def source_problems(source: str) -> tuple[list[str], list[str]]:
                 problems.append(f"source '{item}': the time must go to the minute")
                 continue
             found = owner_at(value)
-            if not found:
+            if not found and deleted(value):
+                problems.append(f"{SOURCE_DELETED}source '{item}' is older than the oldest owner message still "
+                                f"readable ({earliest(_owner_cache)})")
+            elif not found:
                 problems.append(f"source '{item}': no owner message at this time")
             owner_texts += found
         elif kind == "git":
@@ -106,6 +118,8 @@ def row_problems(row: dict) -> list[str]:
     quotes = QUOTE.findall(row["what"])
     if row["type"] in OWNER_TYPES and not quotes:
         problems.append(f"type '{row['type']}' must quote the owner verbatim as *\"...\"*")
+    if not owner_texts and any(p.startswith(SOURCE_DELETED) for p in source_errors):
+        quotes = []
     for quote in quotes:
         fragments = [f for f in (norm(p) for p in ELLIPSIS.split(quote)) if len(f) >= MIN_FRAGMENT] or [norm(quote)]
         if not any(all(f in text for f in fragments) for text in owner_texts):
@@ -118,12 +132,16 @@ def check(base: str) -> int:
         print(f"{REL} does not exist yet")
         return 0
     text = HISTORY.read_text(encoding="utf-8")
-    rows, bad = read_rows(text), 0
+    rows, bad, gone = read_rows(text), 0, 0
     for index, row in enumerate(rows, start=1):
         problems = row_problems(row)
         if row["id"] != f"H-{index:04d}":
             problems.append(f"id must be H-{index:04d} (consecutive, nothing inserted)")
         for problem in problems:
+            if problem.startswith(SOURCE_DELETED):
+                gone += 1
+                print(f"NOTE   {REL}:{row['line']} {row['id']}: {problem}")
+                continue
             bad += 1
             print(f"WRONG  {REL}:{row['line']} {row['id']}: {problem}")
     old = subprocess.run(["git", "show", f"{base}:{REL}"], cwd=REPO, capture_output=True, text=True)
@@ -133,7 +151,7 @@ def check(base: str) -> int:
         bad += 1
         print(f"WRONG  {REL}: a row that exists on {base} was changed or removed. The log is append only; "
               "to correct a row, add a 'correction' row that points to its id.")
-    print(f"{len(rows)} rows, {bad} problems.")
+    print(f"{len(rows)} rows, {bad} problems, {gone} sources whose transcript was deleted.")
     return 1 if bad else 0
 
 
