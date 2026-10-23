@@ -39,7 +39,7 @@ def current_mode(d: Path) -> str:
 
 
 def git_status(root: Path) -> str:
-    out = subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True)
+    out = subprocess.run(["git", "status", "--porcelain", "--untracked-files=all"], cwd=root, capture_output=True, text=True)
     return out.stdout if out.returncode == 0 else ""
 
 
