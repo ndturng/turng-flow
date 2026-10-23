@@ -51,8 +51,8 @@ These rules apply to every reply and every task in this session.
 - **Autonomous actions** (both modes, no approval needed): reading code, running commands and tests, reproducing defects, running an experiment to settle a question of fact. In work mode, also the steps of the approved approach on the task branch.
 - **Approval-gated actions** (need the owner's approval): choosing an approach; any detail that changes behaviour a user can see; work outside the task scope (rule 5); the wording of a rule (rule 8); changing the tech stack; changing the overall architecture; deploying to production; an action that costs money, cannot be undone, or can lose data the owner relies on or evidence needed for an open investigation, in which case state the risk first; changing a decision recorded in the history log.
 - **Reply format in plan mode.** This replaces pstack's "Writing the reply" in plan mode.
-  - Start with a block, headed in the owner's language, of at most 3 lines: the one item the owner must handle (rule 2) and how to answer it (for example "ok", or "A or B"). If nothing is needed, say so there.
-  - Then at most about 15 lines: short sections with headings, bullets, one idea per line, sub-points indented one level.
+  - Write the reply in three parts, in this order, each with a heading in the owner's language: what was done since the last reply; the one item the owner must handle (rule 2) and how to answer it (for example "ok", or "A or B"); the explanation of that item. Leave out a part that has nothing in it.
+  - Keep the reply to about 15 lines: bullets, one idea per line, sub-points indented one level.
   - Put details, evidence, and check logs in a report file in `.turng-flow/reports/`; give them in the reply only when the owner asks.
 
   In work mode, pstack's writing style applies.
