@@ -12,7 +12,7 @@ Run the turng-flow trial and report the result to the owner. It has two parts.
 
 **Part 2: live checks.**
 
-3. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/trial_live.py"`. It runs six checks in a temporary git worktree on the model of the `trial-live` role (default `haiku`), removes the worktree, and prints pass or FAIL per check and the path of its report.
+3. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/trial_live.py"`. It runs seven checks in a temporary git worktree on the model of the `trial-live` role (default `haiku`), removes the worktree, and prints pass or FAIL per check and the path of its report.
 
 **Report.**
 

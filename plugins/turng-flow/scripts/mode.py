@@ -20,8 +20,19 @@ from pathlib import Path
 MODES = ("plan", "work")
 
 
+def project_root() -> Path:
+    env = os.environ.get("CLAUDE_PROJECT_DIR")
+    if env:
+        return Path(env).resolve()
+    cwd = Path.cwd().resolve()
+    for folder in (cwd, *cwd.parents):
+        if (folder / ".turng-flow").is_dir():
+            return folder
+    return cwd
+
+
 def state_dir() -> Path:
-    root = Path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd())
+    root = project_root()
     d = root / ".turng-flow"
     d.mkdir(exist_ok=True)
     ignore = d / ".gitignore"

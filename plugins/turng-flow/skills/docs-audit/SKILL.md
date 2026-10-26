@@ -1,9 +1,9 @@
 ---
-name: backlog-audit
+name: docs-audit
 description: Check what the agent just wrote in BACKLOG.md, HISTORY.tsv, or TASK_SPEC.md: whether each sentence matches what the owner decided and what the code says, or is the agent's own conclusion. Use when the owner asks for it, and always after every edit to those files, before handing the owner the commit commands.
 ---
 
-# backlog-audit
+# docs-audit
 
 Purpose: decide whether the documents were put together objectively from existing facts, or contain inference or invention. It does not check whether the code works and does not rerun tests. It separates four kinds of statement and checks each against a source other than the agent that wrote it:
 
@@ -26,7 +26,7 @@ Purpose: decide whether the documents were put together objectively from existin
 
 ## Failing items and items not judged
 
-A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, or `CANNOT CHECK`.
+A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, `MISSING APPROVAL`, or `CANNOT CHECK`.
 
 Three kinds of text get no label; the reviewer lists them in a separate "not judged" section:
 - The group tag `[...]` in a backlog item heading, and the `refs` column of a HISTORY row. These are classifications the agent sets by the format.
@@ -63,9 +63,9 @@ The first line checks the files on disk, the second a committed branch.
 
 The self-check does not replace step 3.
 
-**Step 3: first check (a new subagent).** First save a copy of each file in scope with the Write tool to `.turng-flow/reports/backlog-audit/<same relative path>` (plan mode blocks shell copies). Get the model with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/models.py" doc-audit` and spawn one subagent with that model (for `inherit`, omit the model). Its prompt is `${CLAUDE_SKILL_DIR}/references/auditor-prompt.md` with `BASE`, `HEAD`, the `?` lines from step 1, and `OWNER_MESSAGES` (the absolute path `${CLAUDE_PLUGIN_ROOT}/scripts/owner_messages.py`) filled in. `BASE` is the default branch (`git symbolic-ref --short refs/remotes/origin/HEAD` without `origin/`, otherwise `main` or `master`); `HEAD` is `WORKTREE` for files not yet committed, otherwise the branch name.
+**Step 3: first check (a new subagent).** First save a copy of each file in scope with the Write tool to `.turng-flow/reports/docs-audit/<same relative path>` (plan mode blocks shell copies). Get the model with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/models.py" doc-audit` and spawn one subagent with that model (for `inherit`, omit the model). Its prompt is `${CLAUDE_SKILL_DIR}/references/auditor-prompt.md` with `BASE`, `HEAD`, `TASK_CLOSE` (`yes` when the check is part of closing a task, otherwise `no`), the `?` lines from step 1, and `OWNER_MESSAGES` (the absolute path `${CLAUDE_PLUGIN_ROOT}/scripts/owner_messages.py`) filled in. `BASE` is the default branch (`git symbolic-ref --short refs/remotes/origin/HEAD` without `origin/`, otherwise `main` or `master`); `HEAD` is `WORKTREE` for files not yet committed, otherwise the branch name.
 
-**Step 4: recheck the changed lines (the same reviewer).** After fixing, list the changed lines with `diff` between the copy in `.turng-flow/reports/backlog-audit/` and the current file, then save the new version there with the Write tool. Send the step 3 reviewer `${CLAUDE_SKILL_DIR}/references/recheck-prompt.md` with that list. Do not explain why the lines changed. The reviewer judges only the listed lines; the labels of unchanged lines carry over.
+**Step 4: recheck the changed lines (the same reviewer).** After fixing, list the changed lines with `diff` between the copy in `.turng-flow/reports/docs-audit/` and the current file, then save the new version there with the Write tool. Send the step 3 reviewer `${CLAUDE_SKILL_DIR}/references/recheck-prompt.md` with that list. Do not explain why the lines changed. The reviewer judges only the listed lines; the labels of unchanged lines carry over.
 Call a new reviewer and check everything again (step 3) when any of these holds: new code was committed since the last check; the owner said something new about an item being checked; the previous reviewer can no longer be reached.
 
 **Step 5: report to the owner**, in this order: (a) the script output verbatim, (b) the reviewer's table, (c) the first item the owner must decide; give the next one only after the owner has handled it (working rule 2). If a script exits with a non-zero code or the reviewer has failing items, do not hand over the commit commands until the owner answers.

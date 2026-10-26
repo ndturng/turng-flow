@@ -130,6 +130,20 @@ def checks(s: Session) -> list[tuple[str, bool, str]]:
     fired = s.transcript_contains("files changed during plan mode")
     results.append(("6. End-of-turn check reports a file written in plan mode", fired,
                     f"hook message found in transcript: {fired}; " + reply[:150]))
+
+    # Runs the script directly: it checks where the mode file goes, not how a model behaves.
+    nested = s.workdir / ".claude" / "worktrees" / "trial-nested"
+    subprocess.run(["git", "worktree", "add", "--detach", str(nested), "HEAD"], cwd=s.workdir, check=True,
+                   capture_output=True)
+    try:
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+        subprocess.run([sys.executable, str(Path(__file__).parent / "mode.py"), "set", "work"], cwd=nested,
+                       env=env, capture_output=True)
+        ok = s.mode().get("mode") == "work" and not (nested / ".turng-flow").exists()
+        results.append(("7. Mode command run in a nested worktree writes the project's mode file", ok,
+                        f"project mode: {s.mode()}; nested .turng-flow exists: {(nested / '.turng-flow').exists()}"))
+    finally:
+        subprocess.run(["git", "worktree", "remove", "--force", str(nested)], cwd=s.workdir, capture_output=True)
     return results
 
 

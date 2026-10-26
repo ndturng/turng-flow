@@ -34,7 +34,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from mode import current_mode, state_dir  # noqa: E402
+from mode import current_mode, project_root, state_dir  # noqa: E402
 
 EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 DECISION_LOGS = ["agent-workspace/BACKLOG.md", "agent-workspace/HISTORY.tsv", "agent-workspace/tasks/*/TASK_SPEC.md"]
@@ -49,10 +49,6 @@ SHELL_WRITES = re.compile(
     r"\btee\b|\bsed\s+(-\w*\s+)*-i|\brm\b|\bmv\b|\bcp\b|\btouch\b|\bmkdir\b|\bpatch\b"
     r"|\bgit\s+(?:-[cC]\s+\S+\s+|--\S+\s+)*(add|commit|push|checkout|switch|reset|restore|stash|merge|rebase|apply|am|cherry-pick|rm|mv)\b"
 )
-
-
-def project_root() -> Path:
-    return Path(os.environ.get("CLAUDE_PROJECT_DIR") or os.getcwd()).resolve()
 
 
 def relative(path: str) -> str:
@@ -135,6 +131,50 @@ def names_plugin_repo(command: str) -> bool:
     return any(f in command for f in forms)
 
 
+REQUIRED_SKILLS = [
+    ("agent-workspace/BACKLOG.md", "turng-flow:backlog-write"),
+    ("agent-workspace/HISTORY.tsv", "turng-flow:project-history"),
+    ("agent-workspace/tasks/*/TASK_SPEC.md", "turng-flow:task-record"),
+]
+HISTORY_SCRIPT_ADD = re.compile(r"\bhistory\.py[\"']?\s+add\b")
+
+
+def required_skill(rel: str) -> str | None:
+    return next((skill for pattern, skill in REQUIRED_SKILLS if fnmatch.fnmatch(rel, pattern)), None)
+
+
+def skills_since_owner(transcript: str | None) -> set[str] | None:
+    """Skills the agent ran since the owner's last message; None when the transcript cannot be read."""
+    try:
+        lines = open(transcript, encoding="utf-8").readlines() if transcript else None
+    except OSError:
+        return None
+    if lines is None:
+        return None
+    ran: set[str] = set()
+    for line in lines:
+        try:
+            rec = json.loads(line)
+        except ValueError:
+            continue
+        if rec.get("isSidechain"):
+            continue
+        if rec.get("type") == "user" and (rec.get("origin") or {}).get("kind") == "human":
+            ran = set()
+        elif rec.get("type") == "assistant":
+            for block in (rec.get("message") or {}).get("content") or []:
+                if isinstance(block, dict) and block.get("type") == "tool_use" and block.get("name") == "Skill":
+                    ran.add(str((block.get("input") or {}).get("skill", "")))
+    return ran
+
+
+def require_skill(skill: str, target: str, transcript: str | None) -> None:
+    ran = skills_since_owner(transcript)
+    if ran is not None and skill not in ran:
+        deny(f"turng-flow: run the skill {skill} before changing {target}. Run it each time, even if it ran "
+             "earlier in the session: its text may have been summarized out of the context.")
+
+
 def allowed(rel: str, mode: str) -> bool:
     if Path(rel).is_absolute():
         return not plugin_file(rel)
@@ -173,6 +213,9 @@ def main() -> None:
     if tool in EDIT_TOOLS:
         rel = relative(tool_input.get("file_path") or tool_input.get("notebook_path") or "")
         if allowed(rel, mode):
+            skill = required_skill(rel)
+            if skill:
+                require_skill(skill, rel, data.get("transcript_path"))
             return
         if plugin_file(rel):
             deny(f"turng-flow: {rel} is inside the turng-flow plugin. The agent does not write to the plugin; "
@@ -196,6 +239,8 @@ def main() -> None:
 
     if tool == "Bash":
         command = tool_input.get("command", "")
+        if HISTORY_SCRIPT_ADD.search(command):
+            require_skill("turng-flow:project-history", "agent-workspace/HISTORY.tsv", data.get("transcript_path"))
         if not writes_files(command):
             return
         if ".turng-flow" in command:

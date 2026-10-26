@@ -19,7 +19,7 @@ Run every step in plan mode. If `.turng-flow/mode.json` says work mode, ask the 
    - Replace or delete every placeholder `<...>` in a line that describes this project. Leave the folder patterns in the table "Where documents are".
    - The owner approves the exact text of each change to `AGENTS.md` and `CLAUDE.md` before it is written (rule 8).
 4. If the project has a user interface or a main user flow and no `verify` skill, propose creating one with `pstack:create-verification-skill`.
-5. Hand the owner the `git add` and `git commit` commands for the new files (rules 4 and 7). Do not commit. The empty `BACKLOG.md` and `HISTORY.tsv` hold no claims, so `turng-flow:backlog-audit` is not needed for them; it applies from the first item or row written.
+5. Hand the owner the `git add` and `git commit` commands for the new files (rules 4 and 7). Do not commit. The empty `BACKLOG.md` and `HISTORY.tsv` hold no claims, so `turng-flow:docs-audit` is not needed for them; it applies from the first item or row written.
 
 ## Notes
 

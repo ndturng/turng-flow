@@ -24,7 +24,9 @@ Give each claim exactly one of these labels:
 - RECORD MISMATCH / NO RECORD: for kind C.
 - CANNOT CHECK: give the reason.
 
-A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, or `CANNOT CHECK`.
+Also, for TASK_SPEC.md: list every change in the task's scope that a user can see (wording, a button, what the screen shows) or that touches data the owner relies on (a schema change, a migration, a deletion), and find the owner's approval for each as a verbatim quote. When TASK_CLOSE is yes, also read the task's code diff against BASE and list such changes the TASK_SPEC does not cover. Each change without approval gets the label MISSING APPROVAL.
+
+A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, `MISSING APPROVAL`, or `CANNOT CHECK`.
 
 Three kinds of text get no label; list them in a separate "not judged" section:
 - The group tag `[...]` in a backlog item heading, and the `refs` column of a HISTORY row. These are classifications the agent sets by the format.
@@ -39,5 +41,6 @@ Do not propose fixes, and do not give an overall verdict such as "looks fine ove
 
 BASE = {{BASE}}
 HEAD = {{HEAD}}
+TASK_CLOSE = {{TASK_CLOSE}}
 Lines marked `?` by the script:
 {{UNQUOTED}}
