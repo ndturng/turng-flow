@@ -21,17 +21,18 @@ Purpose: decide whether the documents were put together objectively from existin
 3. Report the script output and the reviewer's table verbatim. Do not summarise away failing items or add defences between them. Any view of the writing agent goes in a separate section at the end.
 4. An item that could not be checked is labelled `CANNOT CHECK` with the reason. It never counts as passed.
 5. Run before handing the owner the `git add` and `git commit` commands. If it is already committed, use `--head <branch>`.
-6. A matter the owner has not answered is recorded as "no owner opinion yet". Ask the owner for a clear answer when it is either an important decision about direction, or something the next step cannot proceed without. The question must stand on its own, so the owner can answer without searching the conversation: state the problem, the context (the related `B-xxx` or `H-xxxx`, the current state, what the owner already decided), and the options if any. Otherwise do not ask; record it in "Open questions".
+6. A matter the owner has not answered is recorded as "no owner opinion yet (checked <sources>, <date>)". Ask the owner for a clear answer when it is either an important decision about direction, or something the next step cannot proceed without. The question must stand on its own, so the owner can answer without searching the conversation: state the problem, the context (the related `B-xxx` or `H-xxxx`, the current state, what the owner already decided), and the options if any. Otherwise do not ask; record it in "Open issues".
 7. Edits made to fix audit findings happen in plan mode, like every edit to the decision logs (`BACKLOG.md`, `HISTORY.tsv`, `TASK_SPEC.md`).
 
 ## Failing items and items not judged
 
-A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, `MISSING APPROVAL`, or `CANNOT CHECK`.
+A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, `MISSING APPROVAL`, `MISSING ISSUE`, or `CANNOT CHECK`.
 
-Three kinds of text get no label; the reviewer lists them in a separate "not judged" section:
+A sentence that claims something is absent ("no owner opinion yet", "no open issue recorded") names the sources it searched. The reviewer searches exactly those sources. Nothing found: `CORRECT`. Something found: `WRONG`, naming what was found. No sources named: `NO SOURCE`.
+
+Two kinds of text get no label; the reviewer lists them in a separate "not judged" section:
 - The group tag `[...]` in a backlog item heading, and the `refs` column of a HISTORY row. These are classifications the agent sets by the format.
-- A sentence citing a document outside the repository, when it says "according to a document the agent read on <date>" and sits in the field "Agent proposal" or "Open questions". If either condition is missing, label it as usual.
-- A sentence "no owner opinion yet" about a matter: the reviewer filters the owner's messages by keywords of that matter. No message found: `CORRECT`; a message found: `WRONG`.
+- A sentence citing a document outside the repository, when it says "according to a document the agent read on <date>" and sits in the field "Agent proposal" or "Open issues". If either condition is missing, label it as usual.
 
 ## Steps
 

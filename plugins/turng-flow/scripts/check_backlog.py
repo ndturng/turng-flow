@@ -29,11 +29,14 @@ FIELDS = [
     ("Code state", "not checked"),
     ("Work needed", None),
     ("Owner decided", "not decided"),
-    ("Open questions", "none"),
+    ("Open issues", "no open issue recorded (checked <sources>, <date>)"),
     ("Schedule", "not scheduled"),
     ("Agent proposal", "none"),
     ("Sources", None),
 ]
+# Field names used before 0.1.4, still accepted so older backlogs keep passing.
+OLD_NAMES = {"Open issues": "Open questions"}
+NO_ISSUE = "no open issue recorded"
 FIELD_MAX = 400
 # An item carried over from an old backlog whose owner decision could not be found in the transcripts.
 UNTRACED = "source not traced"
@@ -81,10 +84,15 @@ def entry_problems(entry: dict, owner: list[dict], history_ids: set[str], old_li
                            f"has {len(entry['fields'])}"]
     for (name, empty), (number, line) in zip(FIELDS, entry["fields"]):
         prefix = f"- **{name}:** "
-        if not line.startswith(prefix):
+        old_prefix = f"- **{OLD_NAMES[name]}:** " if name in OLD_NAMES else None
+        if old_prefix and line.startswith(old_prefix):
+            prefix = old_prefix
+        elif not line.startswith(prefix):
             problems.append(f"line {number}: must start with '{prefix}'")
             continue
         value = line[len(prefix):].strip()
+        if name == "Open issues" and (value == "none" or (value.startswith(NO_ISSUE) and "(checked " not in value)):
+            problems.append(f"line {number}: name the sources searched, as '{empty}'")
         if not value:
             problems.append(f"line {number}: field '{name}' is empty" + (f"; with no information write '{empty}'" if empty else ""))
         if len(line) > FIELD_MAX:
@@ -104,8 +112,8 @@ def entry_problems(entry: dict, owner: list[dict], history_ids: set[str], old_li
         if name == "Owner decided" and value != empty and not QUOTE.search(value) and not value.startswith(UNTRACED):
             problems.append(f"line {number}: quote the owner verbatim as *\"...\"* with a date, or write '{empty}', "
                             f"or start with '{UNTRACED}'")
-        if name not in ("Owner decided", "Open questions", "Schedule") and QUOTE.search(value):
-            problems.append(f"line {number}: owner quotes belong only in 'Owner decided', 'Open questions', or 'Schedule'")
+        if name not in ("Owner decided", "Open issues", "Schedule") and QUOTE.search(value):
+            problems.append(f"line {number}: owner quotes belong only in 'Owner decided', 'Open issues', or 'Schedule'")
         for quote in QUOTE.findall(value):
             if find(quote, owner):
                 continue
