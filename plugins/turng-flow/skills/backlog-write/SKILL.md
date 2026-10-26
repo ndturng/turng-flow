@@ -26,7 +26,7 @@ A heading `### B-001 [tag] Short name`, then exactly 7 lines, in this order, eac
 | **Code state** | What the code is like now | The file, just opened and read; cite `path:line` and `checked YYYY-MM-DD` | `not checked` |
 | **Work needed** | What to do, in one sentence | What the owner asked for, or a defect seen in the code | (required) |
 | **Owner decided** | Verbatim `*"..."*` with the date | The owner's words in the session transcripts | `not decided` |
-| **Open questions** | Questions without an answer yet | A question the owner asked and has not decided, or one the agent needs to ask | `none` |
+| **Open issues** | Issues of this item not resolved yet: an owner question or request not decided, a question the agent needs to ask, a known defect | The owner's words, `ISSUES.tsv` rows, reviewer findings | `no open issue recorded (checked <sources>, <date>)` |
 | **Schedule** | When the owner scheduled it, or after what | The owner's verbatim words | `not scheduled` |
 | **Agent proposal** | The agent's own view, if any | The agent; always kept here | `none` |
 | **Sources** | `H-xxxx`, task folders | HISTORY.tsv | (required) |
@@ -35,13 +35,13 @@ Item ids `B-xxx` increase and are never reused.
 
 ## Rules
 
-1. **No source, no fact.** A field without information gets exactly the wording in the last column. Do not fill it in or guess.
+1. **No source, no fact.** A field without information gets exactly the wording in the last column. Do not fill it in or guess. The empty wording of "Open issues" names the sources searched, for example "no open issue recorded (checked owner messages 2026-10-24..26, tasks/TASK-009/ISSUES.tsv)".
 2. **The agent's judgement goes only in "Agent proposal".** Priority, "later", "small debt", "low risk", "cheap" are all judgements. The tag `[...]` only says the kind of work (`tech-debt`, `feature`, `security-debt`, ...), not how important it is.
 3. **Only the owner sets "Schedule".** The agent does not schedule work or write "after MVP" on its own.
 4. **The owner's words are verbatim**, and when the owner agrees to something, record exactly that, no wider.
 5. **Read the code again when writing "Code state"**; do not copy it from memory or from an older item.
 6. **HISTORY first, backlog second.** Before adding an item there must be a `debt-recorded`, `open-question`, or `owner-decision` row; "Sources" points to it.
-7. **Remove a finished item completely**: no strike-through, no "done" mark. Before removing it there must be a HISTORY row `debt-closed`, `task-closed`, or `dropped` whose `refs` names the item. Remove it only when nothing in it still applies: an item with an unanswered "Open questions" stays, and is edited to keep only what still applies.
+7. **Remove a finished item completely**: no strike-through, no "done" mark. Before removing it there must be a HISTORY row `debt-closed`, `task-closed`, or `dropped` whose `refs` names the item. Remove it only when nothing in it still applies: an item with an unresolved "Open issues" entry stays, and is edited to keep only what still applies.
 8. **Do not record test results, how the work was done, or the item's change history.** Those belong in the task folder.
 9. **Edit the backlog in plan mode.** In work mode it is read only; if an item needs to change, ask the owner to run `/turng-flow:plan-mode`.
 
@@ -61,6 +61,6 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/history.py" check
 
 ## What the script can and cannot check
 
-It checks: all 7 fields present and in order, lengths, the `checked YYYY-MM-DD` date in "Code state", owner quotes only in "Owner decided", "Open questions", or "Schedule" and found verbatim in the owner's messages, files and line numbers exist, at least one existing `H-xxxx` in "Sources", `old:N` within the old backlog, and that an item removed since the default branch has a `debt-closed`, `task-closed`, or `dropped` HISTORY row.
+It checks: all 7 fields present and in order, lengths, the `checked YYYY-MM-DD` date in "Code state", owner quotes only in "Owner decided", "Open issues", or "Schedule" and found verbatim in the owner's messages, sources named in an empty "Open issues", the old field name "Open questions" accepted, files and line numbers exist, at least one existing `H-xxxx` in "Sources", `old:N` within the old backlog, and that an item removed since the default branch has a `debt-closed`, `task-closed`, or `dropped` HISTORY row.
 
 It cannot check: whether "Code state" describes the file correctly; whether a quote is used in the right context; whether "Work needed" is what the owner wants. The skill `turng-flow:docs-audit` reviews these.

@@ -26,12 +26,18 @@ Give each claim exactly one of these labels:
 
 Also, for TASK_SPEC.md: list every change in the task's scope that a user can see (wording, a button, what the screen shows) or that touches data the owner relies on (a schema change, a migration, a deletion), and find the owner's approval for each as a verbatim quote. When TASK_CLOSE is yes, also read the task's code diff against BASE and list such changes the TASK_SPEC does not cover. Each change without approval gets the label MISSING APPROVAL.
 
-A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, `MISSING APPROVAL`, or `CANNOT CHECK`.
+When TASK_CLOSE is yes, also check the task's records:
+- Read `agent-workspace/tasks/<TASK>/ISSUES.tsv`. For each row, check its evidence: `fixed` names a commit or test that exists and does what the row says; `answered` quotes the owner verbatim at the cited time; `deferred` names a backlog item that exists and quotes the owner. A row still `open`, or with evidence that does not hold, is a failing item.
+- Search the transcripts of the sessions that worked on the task (`~/.claude/projects/<project path with every non-alphanumeric character as "-">/*.jsonl`, filtered by the task's dates) and the task's `decisions.tsv` for owner questions or requests, defects, uncovered checks, and reviewer findings. Each one without an `ISSUES.tsv` row gets the label MISSING ISSUE.
+- Compare `decisions.tsv` with the transcripts. List each row that says something the transcript does not show (WRONG), and each delegation, verification run, change of direction, or agent mistake that has no row (NO RECORD).
 
-Three kinds of text get no label; list them in a separate "not judged" section:
+A failing item has the label `WRONG`, `NO SOURCE`, `OUT OF CONTEXT`, `AGENT VIEW WRITTEN AS FACT`, `RECORD MISMATCH`, `NO RECORD`, `MISSING APPROVAL`, `MISSING ISSUE`, or `CANNOT CHECK`.
+
+A sentence that claims something is absent ("no owner opinion yet", "no open issue recorded") names the sources it searched. Search exactly those sources. Nothing found: CORRECT. Something found: WRONG, naming what was found. No sources named: NO SOURCE.
+
+Two kinds of text get no label; list them in a separate "not judged" section:
 - The group tag `[...]` in a backlog item heading, and the `refs` column of a HISTORY row. These are classifications the agent sets by the format.
-- A sentence citing a document outside the repository, when it says "according to a document the agent read on <date>" and sits in the field "Agent proposal" or "Open questions". If either condition is missing, label it as usual.
-- A sentence "no owner opinion yet" about a matter: filter the owner's messages by keywords of that matter. No message found: `CORRECT`; a message found: `WRONG`.
+- A sentence citing a document outside the repository, when it says "according to a document the agent read on <date>" and sits in the field "Agent proposal" or "Open issues". If either condition is missing, label it as usual.
 
 Return (in the language of the documents you are checking, short sentences, no introduction):
 1. A table: file:line in the document | claim (short quote) | kind | label | evidence (`path:line`, the command run and its result, or the time and a quote of the owner's message).
