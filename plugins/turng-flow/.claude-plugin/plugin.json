@@ -1,6 +1,6 @@
 {
   "name": "turng-flow",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Owner-supervised agent workflow: working rules loaded at session start, plus skills for backlog, decision history, and task records.",
   "author": {
     "name": "ndturng"

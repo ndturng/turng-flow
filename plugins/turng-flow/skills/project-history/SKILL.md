@@ -30,12 +30,12 @@ Events that take effect outside the current task. A decision that only matters i
 | `dropped` | The owner drops a piece of work or a backlog item | Same; `refs` names the item |
 | `debt-recorded` | A debt item is added to the backlog | `refs` names `B-xxx` |
 | `debt-closed` | A debt item is resolved | `git:` or `task:`; `refs` names `B-xxx` |
-| `task-closed` | A task is merged | `git:<merge sha>` and `task:` |
+| `task-closed` | A task's closing documents are written, on the task branch, before its pull request | `task:` and `git:<last commit of the task branch>` |
 | `correction` | An earlier row or document was wrong | `refs` names the `H-xxxx` corrected |
 
 ## Rules
 
-1. **Write only through the script.** It refuses rows whose sources or owner quotes cannot be checked; do not edit the file by hand. The other entries in the "Required" column are conventions the script does not check; `turng-flow:backlog-audit` reviews them.
+1. **Write only through the script.** It refuses rows whose sources or owner quotes cannot be checked; do not edit the file by hand. The other entries in the "Required" column are conventions the script does not check; `turng-flow:docs-audit` reviews them.
 2. **Append only.** Never change or delete an old row. When the owner changes their mind, add a new row whose `refs` points to the old one.
 3. **Owner words are verbatim**, as `*"..."*`, taken from the owner's message at the time cited in `source`. Do not restate the owner's intent in the agent's words and record it as an owner decision. If the owner only answered "agreed" or "1. a", quote exactly that and describe the question outside the quote.
 4. **Do not record the agent's opinions.** An agent proposal belongs in the "Agent proposal" field of a backlog item, not in the log.
@@ -71,5 +71,5 @@ To look something up, grep `agent-workspace/HISTORY.tsv` by task id, item `B-xxx
 ## Limits
 
 - The script sees the owner's words only in the Claude Code session transcripts on this machine. A decision the owner made elsewhere cannot be recorded as `owner-decision`; ask the owner to confirm it in the session.
-- The script checks that a quote is real, not that the text outside the quote summarizes the context correctly. The `turng-flow:backlog-audit` skill reviews that.
+- The script checks that a quote is real, not that the text outside the quote summarizes the context correctly. The `turng-flow:docs-audit` skill reviews that.
 - Owner message times are in UTC.

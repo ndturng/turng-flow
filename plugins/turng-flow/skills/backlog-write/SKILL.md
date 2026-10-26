@@ -57,10 +57,10 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_backlog.py"
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/history.py" check
 ```
 
-5. Before handing the owner the `git add` and `git commit` commands, run the skill `turng-flow:backlog-audit`.
+5. Before handing the owner the `git add` and `git commit` commands, run the skill `turng-flow:docs-audit`.
 
 ## What the script can and cannot check
 
 It checks: all 7 fields present and in order, lengths, the `checked YYYY-MM-DD` date in "Code state", owner quotes only in "Owner decided", "Open questions", or "Schedule" and found verbatim in the owner's messages, files and line numbers exist, at least one existing `H-xxxx` in "Sources", `old:N` within the old backlog, and that an item removed since the default branch has a `debt-closed`, `task-closed`, or `dropped` HISTORY row.
 
-It cannot check: whether "Code state" describes the file correctly; whether a quote is used in the right context; whether "Work needed" is what the owner wants. The skill `turng-flow:backlog-audit` reviews these.
+It cannot check: whether "Code state" describes the file correctly; whether a quote is used in the right context; whether "Work needed" is what the owner wants. The skill `turng-flow:docs-audit` reviews these.
