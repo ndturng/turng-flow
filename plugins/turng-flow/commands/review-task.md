@@ -5,6 +5,12 @@ disable-model-invocation: true
 
 Run the turng-flow task review and report the result to the owner.
 
+Arguments: `$ARGUMENTS`.
+
+- If the argument is `list` or `list <N>`: run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/review_collect.py" --list <N>` (leave out `<N>` if none was given), show the table it prints, and stop. Do not review.
+- If the argument is a session id (or the first characters of one): add `--session <id>` to the command in step 1. The review covers that session only.
+- If there is no argument: review everything since the last review, as before.
+
 1. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/review_collect.py"`. It prints the path of a manifest that lists one or more input files for the period since the last review.
 2. Get the model with `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/models.py" task-review`.
 3. For each input file, spawn one subagent with that model (for `inherit`, omit the model). Give it the input file path, the instructions file `${CLAUDE_PLUGIN_ROOT}/reference/review-instructions.md`, and an output path `.turng-flow/reports/review-result-part-<n>.json`. Run the subagents in parallel.

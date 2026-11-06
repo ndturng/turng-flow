@@ -71,6 +71,8 @@ These rules apply to every reply and every task in this session.
 
 - Each test proves only one thing.
 - A business rule that exists only in the frontend has no effect; the server must enforce it.
+- Design every feature and every piece of code with security in mind.
+- An app that collects emails, signs users in with an outside account such as Google, or stores personal data must have a privacy policy and a checkbox where the user agrees to it. The owner decides the text of the policy; the agent does not write it alone.
 
 ## Required skills
 
@@ -82,5 +84,6 @@ These rules apply to every reply and every task in this session.
 | Starting, continuing, or closing a task | `turng-flow:task-record` |
 | The owner states or changes a working rule; a rule file, skill, script, or hook is added or changed in a project other than the turng-flow plugin repository | `turng-flow:update-plugin` (ask the owner before starting) |
 | The project has no `AGENTS.md` or no `agent-workspace/`, and it is not the turng-flow plugin repository | `turng-flow:init-project` |
+| Before the owner declares the MVP finished | A security check of the whole app, with a security review skill or playbook. This is the last required step. Fix each finding, or bring it to the owner. |
 
 Run a skill each time its event happens, even if it already ran earlier in the session: its text may have been summarized out of the context. A hook blocks a change to `BACKLOG.md`, `HISTORY.tsv`, or a `TASK_SPEC.md` when the matching skill (`turng-flow:backlog-write`, `turng-flow:project-history`, `turng-flow:task-record`) has not run since the owner's last message.
