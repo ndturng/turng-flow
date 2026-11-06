@@ -53,6 +53,17 @@ def main() -> None:
 
     reports = manifest_path.parent
     counts = Counter(c["category"] for c in merged["corrections"])
+    if manifest.get("session"):
+        rate = f"{len(merged['corrections']) / manifest['owner_messages']:.3f}" if manifest["owner_messages"] else ""
+        append_tsv(reports / "review-sessions.tsv",
+                   ["session", "since", "until", "owner_messages", "corrections", "rate", "result"],
+                   [manifest["session"], manifest["since"] or "", manifest["until"], manifest["owner_messages"],
+                    len(merged["corrections"]), rate, out.name])
+        for section in SECTIONS:
+            print(f"{section}: {len(merged[section])}")
+        print(f"rejected (quote not found or bad category): {len(rejected)}")
+        print(f"result: {out}")
+        return
     append_tsv(reports / "review-history.tsv", ["since", "until", "result"],
                [manifest["since"] or "", manifest["until"], out.name])
     append_tsv(reports / "metrics.tsv", ["since", "until", "owner_messages", "corrections", "rate", *CATEGORIES],
