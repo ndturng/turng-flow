@@ -19,7 +19,7 @@ These rules apply to every reply and every task in this session.
 6. **Answer question by question.** Applies when the owner discusses a task or a solution with the agent; does not apply while pstack is running a task. When the owner asks several questions, answer them in order: question, problem, solution. Put anything the owner did not ask in a separate section.
 7. **Branches and commits.** Never commit on the default branch; always create a branch first, even for a small documentation commit. Documents go in commits separate from code. Documents that belong to a task go on that task's branch.
 8. **Owner-supervised files.**
-   Group A (rule files): `AGENTS.md`, `CLAUDE.md`, `.claude/skills/`, `.claude/settings*.json`, `.claude/hooks/`. Write to group A only after the owner has approved the exact text to be written.
+   Group A (rule files): `AGENTS.md`, `CLAUDE.md`, `.claude/skills/` except `.claude/skills/verify/`, `.claude/settings*.json`, `.claude/hooks/`. Write to group A only after the owner has approved the exact text to be written. `.claude/skills/verify/` is the result of carrying out a task: it changes in work mode and is checked by `turng-flow:verify-audit` before the owner gets the commit commands.
    Group B (decision logs): `agent-workspace/BACKLOG.md`, `agent-workspace/HISTORY.tsv`, `agent-workspace/tasks/**/TASK_SPEC.md`.
    For both groups, do not run `git commit`; give the owner the `git add` and `git commit` commands.
 9. **Test run scope.** After each edit, run only the related tests, and search carefully so that none are missed. After a small cluster of related changes, run the full suite once.
@@ -44,7 +44,7 @@ These rules apply to every reply and every task in this session.
   | Rule files and design notes | yes, after the owner approves the text (rule 8) | no |
   | Other task records in `agent-workspace/tasks/` | yes | yes |
   | `.turng-flow/` | no | no |
-  | Code and all other files | no | yes |
+  | Code and all other files, including `.claude/skills/verify/` | no | yes |
 
   From any other project, the agent writes nothing in the turng-flow plugin, in either mode: not in its repository and not in the installed copy. The skill `turng-flow:update-plugin` hands the owner a change package instead. When the session runs inside the plugin repository itself, its files are that project's code; its rule files still change only with the text the owner approved (rule 8).
 
@@ -61,6 +61,10 @@ These rules apply to every reply and every task in this session.
 
 - **Mock before UI code.** A task that adds or changes the user interface needs a mock the owner has approved before any UI code is written. Follow `turng-flow:ui-mock`.
 - **Verify before reporting done.** A task that touches the user interface or a main user flow MUST run the project's `verify` skill and attach evidence (script results, server logs) when reporting done. Ask the owner to check by hand only the items that skill lists as needing a manual check. If the project has no `verify` skill, propose creating one with `pstack:create-verification-skill` before reporting the task done.
+
+  If the project's `verify` skill has a `features/` map, every behaviour the owner decided for the task that a user can see on the screen or through the API has an entry in the matching feature file. The entry names one of: a step in a drive script; `pytest covers: <test file>`; `not covered: <reason>`. A behaviour with no entry is a failing item for `turng-flow:verify-audit`. A behaviour a user cannot see needs no entry.
+
+  When a subagent has changed files in `.claude/skills/verify/`, run `turng-flow:verify-audit` before giving the owner the commit commands.
 - **End of a task.** When the task is verified, and before handing over the push command and the pull request, ask the owner to switch to plan mode once and write the closing documents on the task branch: the `task-closed` row in `HISTORY.tsv`, the removal of the backlog items the task finished, and the last updates to `TASK_SPEC.md`. Every row of the task's `ISSUES.tsv` must have the status `fixed`, `answered`, or `deferred`, with its evidence; bring each `open` row to the owner, one per turn (rule 2). Run `turng-flow:docs-audit` with `TASK_CLOSE` set to `yes`, hand over the commit, then the push and one pull request that carries both the code and the closing documents. After the owner has merged it, ask whether to run `/turng-flow:review-task`. The agent cannot run it itself.
 
 ## Development principles
@@ -81,6 +85,7 @@ These rules apply to every reply and every task in this session.
 |---|---|
 | Adding, editing, or closing a backlog item | `turng-flow:backlog-write` |
 | After every edit to a group B file, before handing over the commit | `turng-flow:docs-audit` |
+| A subagent changed files in `.claude/skills/verify/` | `turng-flow:verify-audit` |
 | The owner decides or changes something that holds beyond the current task; a task closes; a debt is recorded or closed | `turng-flow:project-history` |
 | Starting, continuing, or closing a task | `turng-flow:task-record` |
 | The owner states or changes a working rule; a rule file, skill, script, or hook is added or changed in a project other than the turng-flow plugin repository | `turng-flow:update-plugin` (ask the owner before starting) |

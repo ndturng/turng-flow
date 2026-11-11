@@ -40,6 +40,7 @@ EDIT_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 DECISION_LOGS = ["agent-workspace/BACKLOG.md", "agent-workspace/HISTORY.tsv", "agent-workspace/tasks/*/TASK_SPEC.md"]
 RULES_AND_DESIGN = ["AGENTS.md", "CLAUDE.md", ".claude/skills/*", ".claude/settings*.json", ".claude/hooks/*",
                     "agent-workspace/design-notes/*"]
+VERIFY_OUTPUT = [".claude/skills/verify/*"]
 TASK_RECORDS = ["agent-workspace/tasks/*"]
 REPORTS = [".turng-flow/reports/*"]
 OWNER_STATE = [".turng-flow/*", ".turng-flow"]
@@ -72,6 +73,8 @@ def kind(rel: str) -> str:
         return "owner-state"
     if matches(rel, DECISION_LOGS):
         return "decision-log"
+    if matches(rel, VERIFY_OUTPUT):
+        return "code"
     if matches(rel, RULES_AND_DESIGN):
         return "rules-or-design"
     if matches(rel, TASK_RECORDS):
