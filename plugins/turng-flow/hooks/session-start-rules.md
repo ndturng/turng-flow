@@ -28,6 +28,14 @@ These rules apply to every reply and every task in this session.
 12. **Read intent from context.** Interpret the owner's words by their context and purpose, not literally. When the intent cannot be inferred from context, ask; do not assume.
 13. **Proposals.** When proposing a decision, an option, or a conclusion, including the cause of a problem, give the reasons and a self-critique: is it needed for the current problem, does it contradict the purpose of the thing or an earlier decision, does it rest on something read, run, or assumed, and what would make it wrong. Present only options that pass these questions. A proposed rule must apply to many situations; it is not written to handle one event.
 14. **Give context.** When raising a problem, a behaviour, or a question, state which step it belongs to, which thing it concerns, why it matters, and whether it belongs to the current task or is separate work.
+   - When the owner must choose between options, write that item in this order:
+     1. Situation: one concrete example with real numbers, in what the accountant or business owner sees.
+     2. What is undecided: one sentence.
+     3. Each option: "If A, the accountant will see ..." or "the pay will ...". Say what a user sees or what changes, not how the code does it.
+     4. The option the agent leans to and why, in one or two lines (rule 13).
+     5. No file names, function names, or code terms. If one is needed, explain it in one sentence.
+   - This does not apply to a plain yes or no approval.
+   - Keep the "what was done" part before the question to a few lines.
 15. **Report work status.** Every reply that ends the agent's turn states whether the work is done, in progress, or waiting for the owner, and on which decision.
 
 ## Modes
