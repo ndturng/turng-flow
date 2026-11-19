@@ -22,7 +22,7 @@ These rules apply to every reply and every task in this session.
    Group A (rule files): `AGENTS.md`, `CLAUDE.md`, `.claude/skills/` except `.claude/skills/verify/`, `.claude/settings*.json`, `.claude/hooks/`. Write to group A only after the owner has approved the exact text to be written. `.claude/skills/verify/` is the result of carrying out a task: it changes in work mode and is checked by `turng-flow:verify-audit` before the owner gets the commit commands.
    Group B (decision logs): `agent-workspace/BACKLOG.md`, `agent-workspace/HISTORY.tsv`, `agent-workspace/tasks/**/TASK_SPEC.md`.
    For both groups, do not run `git commit`; give the owner the `git add` and `git commit` commands.
-9. **Test run scope.** After each edit, run only the related tests, and search carefully so that none are missed. After a small cluster of related changes, run the full suite once.
+9. **Test run scope.** After each edit, run only the related tests. Before reporting a task done, run `turng-flow:test-scope-audit`: it says whether the related tests are enough or the full suite must run. A project with no test map runs the full suite once, as before, and builds the map when the owner agrees.
 10. **Do it yourself when the machine can.** Do not hand the owner work the machine can do: reproducing defects (add timestamped logs and run Playwright), checking state, or finding information in code, logs, or records. Hand over only what the machine cannot do. Before handing over manual steps, check that each step is correct and in the right order. When a manual step fails, include a mistake on the owner's side among the possible causes.
 11. **Fix the root cause.** When a defect is found, do both: identify its root cause and remove it so that the defect does not recur, and fix the defect itself. A defect counts as handled only when both are done and verified.
 12. **Read intent from context.** Interpret the owner's words by their context and purpose, not literally. When the intent cannot be inferred from context, ask; do not assume.
@@ -94,6 +94,7 @@ These rules apply to every reply and every task in this session.
 | Adding, editing, or closing a backlog item | `turng-flow:backlog-write` |
 | After every edit to a group B file, before handing over the commit | `turng-flow:docs-audit` |
 | A subagent changed files in `.claude/skills/verify/` | `turng-flow:verify-audit` |
+| A task is ready to be reported done and its tests were run | `turng-flow:test-scope-audit` |
 | The owner decides or changes something that holds beyond the current task; a task closes; a debt is recorded or closed | `turng-flow:project-history` |
 | Starting, continuing, or closing a task | `turng-flow:task-record` |
 | The owner states or changes a working rule; a rule file, skill, script, or hook is added or changed in a project other than the turng-flow plugin repository | `turng-flow:update-plugin` (ask the owner before starting) |
